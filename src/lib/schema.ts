@@ -11,3 +11,7 @@ export const registerSchema = z.object({
   email: z.string().email("Wrong email"),
   password: z.string().min(8, "Password is too short").max(50, "Password is too long"),
 });
+
+export const verifySchema = z.object({
+  otp: z.number().min(5, "Incorrect code"),
+});

@@ -5,10 +5,15 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { TRegisterSchema } from "@/types/types";
-import { Link } from "react-router-dom";
+import { TRegisterSchema } from "@/types";
+import { Link, useNavigate } from "react-router-dom";
+import { useRegister } from "@/hooks/useAuth";
+import { onError, setLocalStorage } from "@/lib/utils";
+import { toast } from "sonner";
 
 export const Register = () => {
+  const navigate = useNavigate();
+  const { mutate } = useRegister();
   const form = useForm<TRegisterSchema>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
@@ -20,7 +25,14 @@ export const Register = () => {
   });
 
   const onSubmit = (values: TRegisterSchema) => {
-    console.log(values);
+    mutate(values, {
+      onSuccess() {
+        navigate("/verify");
+        toast.info("Verify the account");
+        setLocalStorage("email", values.email);
+      },
+      onError,
+    });
   };
 
   return (
@@ -35,9 +47,22 @@ export const Register = () => {
               name="firstName"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Your name</FormLabel>
+                  <FormLabel>Your first name</FormLabel>
                   <FormControl>
-                    <Input placeholder="First and last name" {...field} />
+                    <Input placeholder="First name" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="lastName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Your last name</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Last name" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

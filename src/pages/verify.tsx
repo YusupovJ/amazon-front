@@ -1,80 +1,71 @@
 import { Logo } from "@/components/logo";
 import { Button } from "@/components/ui/button";
-import { loginSchema } from "@/lib/schema";
+import { verifySchema } from "@/lib/schema";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { TLoginSchema } from "@/types";
+import { TVerifySchema } from "@/types";
 import { Link, useNavigate } from "react-router-dom";
-import { useLogin } from "@/hooks/useAuth";
-import { onError, setLocalStorage } from "@/lib/utils";
+import { useVerify } from "@/hooks/useAuth";
+import { delLocalStorage, getLocalStorage, onError, setLocalStorage } from "@/lib/utils";
 import { toast } from "sonner";
-import { useAuthStore } from "@/store/authStore";
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 
-export const Login = () => {
-  const { mutate } = useLogin();
+export const Verify = () => {
+  const { mutate } = useVerify();
   const navigate = useNavigate();
-  const { authenticate, setUser } = useAuthStore();
-  const form = useForm<TLoginSchema>({
-    resolver: zodResolver(loginSchema),
+  const form = useForm<TVerifySchema>({
+    resolver: zodResolver(verifySchema),
     defaultValues: {
-      email: "",
-      password: "",
+      otp: 0,
     },
   });
+  const email = getLocalStorage("email") || "";
 
-  const onSubmit = (values: TLoginSchema) => {
-    mutate(values, {
-      onSuccess(data) {
-        if (typeof data === "string") {
-          navigate("/verify");
-          toast.info("Your account is not verified yet");
-          setLocalStorage("email", values.email);
-          return;
-        }
+  const onSubmit = (values: TVerifySchema) => {
+    if (email) {
+      mutate(
+        { ...values, email },
+        {
+          onSuccess(data) {
+            setLocalStorage("accessToken", data.accessToken);
+            setLocalStorage("refreshToken", data.refreshToken);
 
-        setLocalStorage("accessToken", data.accessToken);
-        setLocalStorage("refreshToken", data.refreshToken);
-
-        authenticate();
-        setUser(data);
-
-        toast.success("You successfully logged in");
-        navigate("/");
-      },
-      onError,
-    });
+            toast.success("You successfully verified your account");
+            navigate("/");
+          },
+          onError,
+          onSettled() {
+            delLocalStorage("email");
+          },
+        },
+      );
+    }
   };
 
   return (
     <main className="container flex flex-col items-center my-10">
       <Logo fill="black" />
       <div className="max-w-96 border rounded p-4 mt-5 w-full space-y-4">
-        <h1 className="text-2xl font-bold">Sign in</h1>
+        <h1 className="text-2xl font-bold">Account verification</h1>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
               control={form.control}
-              name="email"
+              name="otp"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email</FormLabel>
+                  <FormLabel>Code</FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter an email" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Password</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Enter a password" type="password" {...field} />
+                    <InputOTP maxLength={6} onChange={(value) => field.onChange(+value)}>
+                      <InputOTPGroup>
+                        <InputOTPSlot index={0} />
+                        <InputOTPSlot index={1} />
+                        <InputOTPSlot index={2} />
+                        <InputOTPSlot index={3} />
+                        <InputOTPSlot index={4} />
+                      </InputOTPGroup>
+                    </InputOTP>
                   </FormControl>
                   <FormMessage />
                 </FormItem>

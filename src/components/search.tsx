@@ -7,9 +7,9 @@ export const Search = () => {
   return (
     <div className="flex grow">
       <div>
-        <Select>
+        <Select defaultValue="0">
           <SelectTrigger className="rounded-r-none">
-            <SelectValue placeholder="Category" />
+            <SelectValue />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="0">All</SelectItem>
